@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+const bcrypt = require('bcrypt');
 
 /**
  * Complexity for bcrypt
@@ -14,7 +14,7 @@ const SALT_FACTOR = 10;
  * @param {Function} callback
  * @return {void}
  */
-export default function(candidate, hash, callback) {
+module.exports = function(candidate, hash, callback) {
 	bcrypt.compare(candidate, hash, function(err, matched) {
 		if (err) {
 			return callback(err);

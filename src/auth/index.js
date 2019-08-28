@@ -1,9 +1,9 @@
-import express from 'express';
-import moment from 'moment';
-import jwt from 'jwt-simple';
-import validatePassword from './validatePassword';
+const express = require('express');
+const moment = require('moment');
+const jwt = require('jwt-simple');
+const validatePassword = require('./validatePassword');
 
-import db from '../../db';
+const db = require('../db');
 
 /**
  * Users collection name
@@ -15,7 +15,7 @@ const USERS_COLLECTION = 'user';
  * Package information
  * @var {object}
  */
-const PKG = require('../../../package.json');
+const PKG = require('../../package.json');
 
 /**
  * Signature for JWT
@@ -35,6 +35,13 @@ const JWT_LIFETIME = process.env['JWT_LIFETIME'] || PKG.config.JWT_LIFETIME || 9
  */
 const BASIC_PRIVILEGES = (!!PKG.config.GUEST_PRIVILEGES) ? PKG.config.GUEST_PRIVILEGES : ['GET'];
 
+const ACTIONS = {
+	'GET': 'search',
+	'POST': 'create',
+	'PUT': 'update',
+	'DELETE': 'delete'
+};
+
 const router = express.Router();
 
 // Allow to get a list of users without auth
@@ -52,6 +59,23 @@ router.get(['/user','/users'], (req, res) => {
 		.catch(err => res.status(500).json(err));
 });
 
+// Allow register new user
+router.post(['/user','/users'], (req, res) => {
+	// Security: remove privileges
+	delete req.body.privileges;
+
+	db(USERS_COLLECTION)
+		.insert(req.body)
+		.then(user => res.status(201).json({
+			'error': false,
+			'user': user
+		}))
+		.catch(err => res.status(500).json({
+			'error': true,
+			'msg': err
+		}));
+});
+
 // Generate token
 router.post('/login', (req, res) => {
 	if (!req.body.email || !req.body.password) {
@@ -61,10 +85,22 @@ router.post('/login', (req, res) => {
 		});
 	}
 
+	let { password } = req.body;
+	delete req.body.password;
+
 	db(USERS_COLLECTION)
 		.search(req.body)
 		.then(result => {
-			validatePassword(req.body.password, result.password, (err, success) => {
+			let user = result[0];
+
+			if (!user) {
+				return Promise.reject({
+					error: true,
+					msg: 'Could not find user'
+				});
+			}
+
+			validatePassword(password, user.password, (err, success) => {
 				if (err || !success) {
 					return res.status(400).json({
 						'error': true,
@@ -73,12 +109,15 @@ router.post('/login', (req, res) => {
 				}
 
 				let token = jwt.encode({
-					user: body,
+					user: user,
 					iat: moment().unix(),
 					exp: moment().add(JWT_LIFETIME, 'hours').unix()
 				}, JWT_SIGNATURE);
 	
-				return res.status(200).send(token);
+				return res.status(200).json({
+					'error': false,
+					'token': token
+				});
 			});
 		})
 		.catch(err => res.status(500).json(err));
@@ -87,7 +126,7 @@ router.post('/login', (req, res) => {
 // Validate existing token, if any
 router.use((req, res, next) => {
 	// Continue to the user validation to check for not logged in permissions
-	if (!req.query.token && !req.headers.authorization) {
+	if (!req.query.token && (!req.headers.authorization || req.headers.authorization.split(' ').length == 1)) {
 		return next();
 	}
 
@@ -96,7 +135,7 @@ router.use((req, res, next) => {
 	try {
 		let body = jwt.decode(token, JWT_SIGNATURE);
 
-		if (!body.exp || body.exp <= moment().unix()) {
+		if (body.exp && body.exp <= moment().unix()) {
 			return res.status(401).json({
 				'error': true,
 				'msg': 'Token expired',
@@ -120,24 +159,28 @@ router.use((req, res, next) => {
 
 // Finally, validate permissions
 router.use('/:model', (req, res, next) => {
-	if (!req.user) {
+	if (!req.user || !req.user.privileges) {
 		if (BASIC_PRIVILEGES.indexOf(req.method.toUpperCase()) === -1) {
 			return res.status(400).json({
 				'error': true,
 				'msg': 'User is not allowed to do this'
 			});
 		}
+
+		return next();
 	}
 
 	// Validate if user has enough privileges
-	if (!req.user.privileges[model] || req.user.privileges[model].indexOf(req.method.toUpperCase()) === -1) {
+	if (!req.user.privileges.some(privilege => privilege.model == req.params.model && privilege.methods.indexOf(req.method.toUpperCase()) > -1)) {
 		return res.status(400).json({
 			'error': true,
-			'msg': 'User cannot perform that action'
+			'msg': 'User cannot perform that action',
+			'action': ACTIONS[req.method],
+			'model': req.params.model
 		});
 	}
 
 	return next();
 });
 
-export default router;
+module.exports = router;

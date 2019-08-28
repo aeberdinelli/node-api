@@ -25,9 +25,14 @@
     "debug": "^4.1.1",
     "express": "^4.17.1",
     "jwt-simple": "^0.5.6",
-    "moment": "^2.24.0"
+    "moment": "^2.24.0",
+    "mongoose": "^5.6.8",
+    "promise": "^8.0.3"
   },
   "config": {
-    "GUEST_PRIVILEGES": ["GET","POST"]
+    "GUEST_PRIVILEGES": [
+      "GET",
+      "POST"
+    ]
   }
 }

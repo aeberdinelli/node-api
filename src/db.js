@@ -1,6 +1,6 @@
-import Promise from 'promise';
-import mongoose from 'mongoose';
-import models from './schemas';
+const Promise = require('promise');
+const mongoose = require('mongoose');
+const models = require('./schemas');
 
 /**
  * Mongoose ObjectID
@@ -32,7 +32,7 @@ const DEFAULT_ORDER = 'ASC';
  * @param {string} db The mongoose schema to use
  * @return {object}
  */
-export default function(db) {
+module.exports = function(db) {
 	var model = models[db];
 
 	return {
@@ -56,16 +56,16 @@ export default function(db) {
 
 			let query = model.find(search);
 
-			query.exec().then(result => {
+			return query.exec().then(result => {
 				if (result.length) {
-					return result[0];
+					return Promise.resolve(result[0]);
 				}
 
 				return Promise.reject(`Object with _id: ${id} not found`);
 			});
 		},
 
-		search(filters, query) {
+		search(filters, query, useRegex = true) {
 			let q;
 
 			filters = filters || {};
@@ -80,14 +80,16 @@ export default function(db) {
 			// Password verification should be done later
 			delete filters.password;
 
-			for (let field in filters) {
-				if (/^(\<|\>|=)*[0-9]+$/.test(filters[field])) {
-					// @TODO: Support number queries
-					return;
-				}
+			if (useRegex) {
+				for (let field in filters) {
+					if (/^(\<|\>|=)*[0-9]+$/.test(filters[field])) {
+						// @TODO: Support number queries
+						return;
+					}
 
-				// Not a numeric search, create regex
-				filters[field] = new RegExp(filters[field], 'gi');
+					// Not a numeric search, create regex
+					filters[field] = new RegExp(filters[field], 'gi');
+				}
 			}
 
 			filters.deleted = null;

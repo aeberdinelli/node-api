@@ -1,7 +1,8 @@
-import express from 'express';
+const express = require('express');
 
-import models from '../schemas';
-import db from '../db';
+const auth = require('../auth');
+const models = require('../schemas');
+const db = require('../db');
 
 /**
  * An object that translates de url parameters to db methods
@@ -25,6 +26,26 @@ const SEARCH_PARAMS = {
 
 let router = express.Router();
 
+/**
+ * Make errors readable
+ */
+const processError = (err) => {
+	let messages = [];
+
+	if (!err.errors) {
+		return {};
+	}
+
+	for (let property in err.errors) {
+		messages.push(err.errors[property].message);
+	}
+
+	return messages;
+};
+
+// Add the authentication middleware
+router.use(auth);
+
 router.use('/:model/:id?', (req, res) => {
 	if (!models[req.params.model]) {
 		return res.status(500).json({
@@ -35,16 +56,22 @@ router.use('/:model/:id?', (req, res) => {
 
 	switch (req.method) {
 		case 'POST':
+			// ...
+			
 			db(req.params.model).insert(req.body)
 				.then(result => res.status(200).json(result))
-				.catch(err => res.status(500).json(err));
+				.catch(err => res.status(500).json({
+					'error': true,
+					'msg': processError(err)
+				}));
 		break;
 		case 'GET':
 			// Find by Id
 			if (req.params.id || req.params._id) {
 				let id = req.params.id || req.params._id;
 
-				return db(req.params.model).get(id)
+				return db(req.params.model)
+					.get(id)
 					.then(result => res.status(200).json(result))
 					.catch(err => res.status(500).json(err));
 			}
@@ -95,4 +122,4 @@ router.use('/:model/:id?', (req, res) => {
 	}
 });
 
-export default router;
+module.exports = router;

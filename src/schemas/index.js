@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 /**
  * This file autoloads the db schemas
@@ -23,4 +23,4 @@ fs.readdirSync(schemas_path).forEach(file => {
 	schemas[`${name}s`] = require(path.join(schemas_path, file));
 });
 
-export default schemas;
+module.exports = schemas;
