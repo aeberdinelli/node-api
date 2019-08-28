@@ -130,7 +130,10 @@ To make this API easily configurable in different environments, most of the sett
 			<td>
 				<em>null</em>
 			</td>
-			<td>**required** Name of the database to use</td>
+			<td>
+				<strong>required</strong>
+				Name of the database to use
+			</td>
 		</tr>
 		<tr>
 			<td>
@@ -142,7 +145,7 @@ To make this API easily configurable in different environments, most of the sett
 			<td>
 				<em>null</em>
 			</td>
-			<td>This sets the logs output to the console. I recommend you use this value: `API*`. That will enable all logs for the API and its sublevels</td>
+			<td>This sets the logs output to the console. I recommend you use this value: <code>API*</code>. That will enable all logs for the API and its sublevels</td>
 		</tr>
 		<tr>
 			<td>
