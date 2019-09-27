@@ -50,15 +50,14 @@ router.use('/:model/:id?', (req, res) => {
 	if (!models[req.params.model]) {
 		return res.status(500).json({
 			'error': true,
-			'msg': `Base de datos ${req.params.model} no encontrada`
+			'msg': `Collection ${req.params.model} not found`
 		});
 	}
 
 	switch (req.method) {
 		case 'POST':
-			// ...
-			
-			db(req.params.model).insert(req.body)
+			db(req.params.model)
+				.insert(req.body)
 				.then(result => res.status(200).json(result))
 				.catch(err => res.status(500).json({
 					'error': true,
@@ -86,7 +85,7 @@ router.use('/:model/:id?', (req, res) => {
 					query[param] = body[param];
 				}
 
-				delete body[param]
+				delete body[param];
 			});
 
 			db(req.params.model)
@@ -98,11 +97,12 @@ router.use('/:model/:id?', (req, res) => {
 			if (!req.params.id) {
 				return res.status(400).json({
 					'error': true,
-					'msg': 'No se envio la Id del objeto a modificar'
+					'msg': 'Missing object id'
 				});
 			}
 
-			db(req.params.model).update(req.params.id, req.query)
+			db(req.params.model)
+				.update(req.params.id, req.query)
 				.then(result => res.json(result))
 				.catch(err => res.status(500).json(err));
 		break;
@@ -110,7 +110,7 @@ router.use('/:model/:id?', (req, res) => {
 			if (!req.params.id) {
 				return res.status(400).json({
 					'error': true,
-					'msg': 'No se envio la Id del objeto a eliminar'
+					'msg': 'Missing object id'
 				});
 			}
 

@@ -1,6 +1,6 @@
 {
   "name": "node-api",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A set of tools to quickly start a NodeJS API",
   "main": "index.js",
   "scripts": {

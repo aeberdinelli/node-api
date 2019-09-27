@@ -1,6 +1,8 @@
 const Promise = require('promise');
 const mongoose = require('mongoose');
+
 const models = require('./schemas');
+const unions = require('./schemas/unions');
 
 /**
  * Mongoose ObjectID
@@ -56,6 +58,11 @@ module.exports = function(db) {
 
 			let query = model.find(search);
 
+			// Fill any related documents
+			if (!!unions[db]) {
+				query.populate(unions[db].join(' '));
+			}
+
 			return query.exec().then(result => {
 				if (result.length) {
 					return Promise.resolve(result[0]);
@@ -94,6 +101,11 @@ module.exports = function(db) {
 
 			filters.deleted = null;
 			q = model.find(filters);
+
+			// Fill any related documents
+			if (!!unions[db]) {
+				q.populate(unions[db].join(' '));
+			}
 
 			// Skip to desired page
 			if (query.page) {
