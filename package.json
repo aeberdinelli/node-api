@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/aeberdinelli/node-api.git"
   },
-  "keywords": [],
+  "keywords": ["framework"],
   "author": "",
   "license": "ISC",
   "bugs": {
